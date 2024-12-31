@@ -12,7 +12,7 @@ from wt_functions import WT, IWT
 
 
 class WTConv(nn.Module):
-    def __init__(self, in_channels, levels=0):
+    def __init__(self, in_channels, levels=0, kernel_size=3):
         """Initializes the WTConv layer.
 
         Args:
@@ -20,9 +20,11 @@ class WTConv(nn.Module):
             levels (int, optional): The number of decomposition levels.
                 If 0, no decomposition is performed. If greater than 0, the input is decomposed
                 into 4 frequency bands at each level. Default is 0.
+            kernel_size (int, optional): The size of the depth-wise convolutional kernel. Default is 3.
 
         Raises:
-            AssertionError: If `in_channels` is not greater than 0, or if `levels` is negative.
+            AssertionError: If `in_channels` is not greater than 0, or if `levels` is negative,
+                or if `kernel_size` is not odd.
 
         Initializes a series of depth-wise convolutional layers, each corresponding to a
         decomposition level. Each level beyond 0 has 4 times the number of channels compared
@@ -30,6 +32,7 @@ class WTConv(nn.Module):
         """
 
         assert in_channels > 0, 'Conv2d: number of input channels must be > 0'
+        assert kernel_size % 2 == 1, 'Conv2d: kernel size must be odd'
         assert levels >= 0, 'WTConv: number of levels must be >= 0'
 
         super(WTConv, self).__init__()
@@ -46,8 +49,8 @@ class WTConv(nn.Module):
                 nn.Conv2d(
                     in_channels=nb_channels,
                     out_channels=nb_channels,
-                    kernel_size=3,
-                    padding=1,
+                    kernel_size=kernel_size,
+                    padding=(kernel_size-1)//2,
                     groups=nb_channels
                 )
             )
