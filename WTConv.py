@@ -26,9 +26,9 @@ class WTConv(nn.Module):
         Raises:
             AssertionError: If `in_channels` is not greater than 0, or if `levels` is negative.
 
-        Initializes a series of depth-wise convolutional layers, each corresponding to a
-        decomposition level. Each level beyond 0 has 4 times the number of channels compared
-        to the input, due to decomposition into 4 frequency bands.
+        Initializes a series of nn.Sequential depth-wise convolutional layers and ChannelWiseScaling,
+        each corresponding to a decomposition level. Each level beyond 0 has 4 times the number of channels
+        compared to the input, due to decomposition into 4 frequency bands.
         """
 
         assert in_channels > 0, 'Conv2d: number of input channels must be > 0'
@@ -44,20 +44,23 @@ class WTConv(nn.Module):
         self.convs = nn.ModuleList()
         for i in range(self.levels + 1):
             nb_channels = in_channels if i == 0 else 4 * in_channels
+            # Combine ChannelWiseScaling with nn.Conv2d
             self.convs.append(
-                nn.Conv2d(
-                    in_channels=nb_channels,
-                    out_channels=nb_channels,
-                    kernel_size=kernel_size,
-                    padding='same',
-                    groups=nb_channels,
-                    bias=(i == 0)  # In the original implementation bias is used only for level=0
+                nn.Sequential(
+                    nn.Conv2d(
+                        in_channels=nb_channels,
+                        out_channels=nb_channels,
+                        kernel_size=kernel_size,
+                        padding='same',
+                        groups=nb_channels,
+                        bias=(i == 0)  # In the original implementation bias is used only for level=0
+                    ),
+                    ChannelWiseScaling(nb_channels)
                 )
             )
 
     def forward(self, X):
-        """
-        Computes the output of the WTConv layer.
+        """Computes the output of the WTConv layer.
 
         The input is first decomposed into 4 frequency bands
         with Wavelet Transform (WT) at each level (except for
@@ -97,9 +100,25 @@ class WTConv(nn.Module):
         return Z_l
 
 
-# Test WTConv with random input
+# Based on original code: https://github.com/BGU-CS-VIL/WTConv/blob/main/wtconv/wtconv2d.py#L91
+# Channel-wise multiplication by a learnable tensor parameter with no normalization
+class ChannelWiseScaling(nn.Module):
+    def __init__(self, num_channels):
+        """Initializes the ChannelWiseScaling layer.
+        Expected shape: (B, C, H, W).
+
+        Args:
+            num_channels (int): The number of input channels for the scaling operation.
+        """
+        super(ChannelWiseScaling, self).__init__()
+        self.weight = nn.Parameter(torch.ones(1, num_channels, 1, 1))
+
+    def forward(self, x):
+        return self.weight * x
+
 
 if __name__ == '__main__':
+    # Test WTConv with random input
     WTConv(3, 3)
     print('WTConv init: OK')
 
