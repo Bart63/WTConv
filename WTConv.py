@@ -49,7 +49,8 @@ class WTConv(nn.Module):
                     out_channels=nb_channels,
                     kernel_size=kernel_size,
                     padding='same',
-                    groups=nb_channels
+                    groups=nb_channels,
+                    bias=(i == 0)  # In the original implementation bias is used only for level=0
                 )
             )
 
