@@ -8,6 +8,7 @@ Based on: https://arxiv.org/pdf/2407.05848
 import torch
 import torch.nn as nn
 
+from utils import add_tensors_with_pad
 from wt_functions import WT, IWT
 
 
@@ -88,8 +89,11 @@ class WTConv(nn.Module):
 
         Z_l = torch.zeros_like(Ys[-1][0])           # Z^{l+1}
         for Y_LL, Y_LH, Y_HL, Y_HH in reversed(Ys):
-            Z_l = IWT(Y_LL + Z_l, Y_LH, Y_HL, Y_HH)
-        Z_l = Z_l + Y_0_LL                          # Z^{0}
+            Z_l = IWT(
+                add_tensors_with_pad(Y_LL, Z_l),
+                Y_LH, Y_HL, Y_HH
+            )
+        Z_l = add_tensors_with_pad(Y_0_LL, Z_l)     # Z^{0}
         return Z_l
 
 
@@ -99,7 +103,7 @@ if __name__ == '__main__':
     WTConv(3, 3)
     print('WTConv init: OK')
 
-    X = torch.rand(1, 3, 32, 32)
+    X = torch.rand(1, 3, 33, 35)
 
     Y = WTConv(3, 0)(X)
     print('WTConv (layers=0) forward: OK')
