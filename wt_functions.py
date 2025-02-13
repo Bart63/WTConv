@@ -39,10 +39,10 @@ def WT(X):
     depthwise_filters_HL = f_HL.repeat(C, 1, 1, 1)
     depthwise_filters_HH = f_HH.repeat(C, 1, 1, 1)
 
-    X_LL = F.conv2d(X, depthwise_filters_LL, stride=2, groups=C)
-    X_LH = F.conv2d(X, depthwise_filters_LH, stride=2, groups=C)
-    X_HL = F.conv2d(X, depthwise_filters_HL, stride=2, groups=C)
-    X_HH = F.conv2d(X, depthwise_filters_HH, stride=2, groups=C)
+    X_LL = F.conv2d(X, depthwise_filters_LL.to(X.device), stride=2, groups=C)
+    X_LH = F.conv2d(X, depthwise_filters_LH.to(X.device), stride=2, groups=C)
+    X_HL = F.conv2d(X, depthwise_filters_HL.to(X.device), stride=2, groups=C)
+    X_HH = F.conv2d(X, depthwise_filters_HH.to(X.device), stride=2, groups=C)
     return X_LL, X_LH, X_HL, X_HH
 
 
@@ -67,10 +67,10 @@ def IWT(X_LL, X_LH, X_HL, X_HH):
     depthwise_filters_HL = f_HL.repeat(C, 1, 1, 1)
     depthwise_filters_HH = f_HH.repeat(C, 1, 1, 1)
 
-    X_reconstructed_LL = F.conv_transpose2d(X_LL, depthwise_filters_LL, stride=2, groups=C)
-    X_reconstructed_LH = F.conv_transpose2d(X_LH, depthwise_filters_LH, stride=2, groups=C)
-    X_reconstructed_HL = F.conv_transpose2d(X_HL, depthwise_filters_HL, stride=2, groups=C)
-    X_reconstructed_HH = F.conv_transpose2d(X_HH, depthwise_filters_HH, stride=2, groups=C)
+    X_reconstructed_LL = F.conv_transpose2d(X_LL, depthwise_filters_LL.to(X_LL.device), stride=2, groups=C)
+    X_reconstructed_LH = F.conv_transpose2d(X_LH, depthwise_filters_LH.to(X_LH.device), stride=2, groups=C)
+    X_reconstructed_HL = F.conv_transpose2d(X_HL, depthwise_filters_HL.to(X_HL.device), stride=2, groups=C)
+    X_reconstructed_HH = F.conv_transpose2d(X_HH, depthwise_filters_HH.to(X_HH.device), stride=2, groups=C)
 
     X = X_reconstructed_LL + X_reconstructed_LH + X_reconstructed_HL + X_reconstructed_HH
     return X
